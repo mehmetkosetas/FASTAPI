@@ -103,7 +103,7 @@ def generate_recommendation(user_row: pd.Series) -> List[str]:
     c = user_row["cluster"]
     # Cluster-based top-level advice
     if c == 2:
-        recs.append("Excellent performance! Maintain your current routine and consistency. 🎉")
+        recs.append("Excellent performance! Maintain your current routine and consistency.")
     elif c == 1:
         recs.append("Your performance is average; try optimizing your environment to reduce distraction.")
     else:
