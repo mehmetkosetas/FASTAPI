@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from sklearn.cluster import KMeans
 from sqlalchemy import create_engine
-from datetime import datetime
+from datetime import datetime, date
 
 # Load environment variables
 load_dotenv()
@@ -161,11 +161,17 @@ def stats(user_id: UUID = Query(..., description="The UUID of the user")):
     if user_row.empty:
         raise HTTPException(status_code=404, detail="User not found")
     user = user_row.iloc[0]
-    latest = df[df.user_id == str(user_id)].sort_values("session_start").iloc[-1]
+    
+    today = date.today()
+    today_sessions = df[
+        (df.user_id == str(user_id)) &
+        (df.session_start.dt.date == today)
+    ]
+    today_focus_total = today_sessions["session_duration"].sum()
     weekly = get_weekly_progress(df, user_id)
     return {
         "user_id": user_id,
-        "today_focus_time": f"{latest.session_duration} min",
+        "today_focus_time": f"{int(today_focus_total)} min",
         "completed_pomodoros": int(user.total_tasks_completed),
         "focus_rate": f"{round(user.avg_focus_level * 10)}%",
         "weekly_progress": weekly,
