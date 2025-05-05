@@ -66,7 +66,13 @@ def load_data() -> pd.DataFrame:
     df['session_start'] = pd.to_datetime(df['session_start'])
     df['session_end']   = pd.to_datetime(df['session_end'])
     return df
-
+    
+def load_tasks() -> pd.DataFrame:
+    """Fetch all user_tasks."""
+    df = pd.read_sql("SELECT * FROM user_tasks", engine)
+    # assume status field exists; parse dates if needed
+    return df
+    
 def compute_user_stats(df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute per-user averages and counts, then cluster all users into 3 groups
@@ -79,7 +85,7 @@ def compute_user_stats(df: pd.DataFrame) -> pd.DataFrame:
               avg_break_duration=("break_duration", "mean"),
               avg_productivity_score=("productivity_score", "mean"),
               avg_focus_level=("focus_level", "mean"),
-              total_tasks_completed=("session_id", "count")
+              completed_pomodoros=("session_id", "count")
           )
           .reset_index()
     )
@@ -90,7 +96,7 @@ def compute_user_stats(df: pd.DataFrame) -> pd.DataFrame:
             "avg_break_duration",
             "avg_productivity_score",
             "avg_focus_level",
-            "total_tasks_completed"
+            "completed_pomodoros"
         ]]
         stats["cluster"] = km.fit_predict(features)
     else:
@@ -156,6 +162,8 @@ def stats(user_id: UUID = Query(..., description="The UUID of the user")):
     weekly progress, aggregate stats, and AI-generated study recommendations.
     """
     df = load_data()
+    tasks_df    = load_tasks()
+    
     stats_df = compute_user_stats(df)
     user_row = stats_df[stats_df.user_id == str(user_id)]
     if user_row.empty:
@@ -168,18 +176,26 @@ def stats(user_id: UUID = Query(..., description="The UUID of the user")):
         (df.session_start.dt.date == today)
     ]
     today_focus_total = today_sessions["session_duration"].sum()
+    
+    # count completed tasks
+    completed_tasks = int(
+        tasks_df[
+            (tasks_df.user_id == str(user_id)) &
+            (tasks_df.status == "completed")
+        ].shape[0]
+    )
     weekly = get_weekly_progress(df, user_id)
     return {
         "user_id": user_id,
         "today_focus_time": f"{int(today_focus_total)} min",
-        "completed_pomodoros": int(user.total_tasks_completed),
+        "completed_pomodoros": int(user.completed_pomodoros),
         "focus_rate": f"{round(user.avg_focus_level * 10)}%",
         "weekly_progress": weekly,
         "avg_session_duration": round(user.avg_session_duration, 2),
         "avg_break_duration": round(user.avg_break_duration, 2),
         "avg_productivity_score": round(user.avg_productivity_score, 2),
         "avg_focus_level": round(user.avg_focus_level, 2),
-        "total_tasks_completed": int(user.total_tasks_completed),
+        "total_tasks_completed": completed_tasks,
         "study_report": generate_recommendation(user)
     }
 
