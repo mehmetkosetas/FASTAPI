@@ -125,7 +125,7 @@ def generate_recommendation(user_row: pd.Series) -> List[str]:
     else:
         recs.append("Your break durations are well balanced.")
     
-    if user_row["avg_productivity_score"] < 3:
+    if user_row["avg_productivity_score"] < 60:
         recs.append("Your productivity seems low; experiment with new techniques.")
     else:
         recs.append("Your productivity scores are good.")
