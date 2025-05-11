@@ -115,7 +115,9 @@ def generate_recommendation(user_row: pd.Series) -> List[str]:
     else:
         recs.append("Your overall performance is low; consider reducing session duration and increasing breaks.")
     # Session duration advice
-    if user_row["avg_session_duration"] > 60:
+    if user_row["avg_session_duration"] < 10:
+        recs.append("Your work sessions are too short, try longer Pomodoro cycles")
+    elif user_row["avg_session_duration"] > 60:
         recs.append("Your work sessions are long, try shorter Pomodoro cycles")
     else:
         recs.append("Session length looks good.")
