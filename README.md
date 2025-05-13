@@ -1,1 +1,1 @@
-# FASTAPI
+This repository contains the AI-based recommendation system backend for the AquaFocus Pomodoro mobile application. Built using FastAPI, it provides study insights and personalized suggestions based on user behavior.
